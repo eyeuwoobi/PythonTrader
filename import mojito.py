@@ -21,26 +21,23 @@ balance = int(broker.fetch_balance()['output2'][0]['dnca_tot_amt'])
 
 
 #Band 갭 조정
-P_band = 0.01  
+P_band = 0.005  
 D_band = 0.04
 
 #P_Inverse2X : Kodex 코스피 인버스 2X
 #P_Leverage : Kodex 코스피 레버리지
 
-# P_Inverse2X = broker.fetch_price("252670")
-# P_Leverage = broker.fetch_price("122630")
-
-# PI_open = int(P_Inverse2X['output']['stck_oprc'])
-# PL_open = int(P_Leverage['output']['stck_oprc'])
+KODEX_KOSPI200_INVERSE2X = '252670'
+KODEX_KOSPI200_LEVERAGE = '122630'
 
 P_Inverse2X = broker.fetch_ohlcv(
-    symbol="252670",
+    symbol=KODEX_KOSPI200_INVERSE2X,
     timeframe='D',
     adj_price=True
 )
 
 P_Leverage  = broker.fetch_ohlcv(
-    symbol="122630",
+    symbol=KODEX_KOSPI200_LEVERAGE,
     timeframe='D',
     adj_price=True
 )
@@ -64,49 +61,41 @@ minute = int(str(today.minute))
 
 time = hour * 60 + minute
 
-tick1 = 5  #주가 2000 ~ 5000
-tick2 = 10 #주가 5000 ~ 20000
-tick3 = 50 #주가 20000 ~ 50000
+#주가 호가단위에 맞춰서 바꾸기
+def Round(price):
+    tick1 = 5  #주가 2000 ~ 5000
+    tick2 = 10 #주가 5000 ~ 20000   
+    tick3 = 50 #주가 20000 ~ 50000  
+    if price < 5000 and price % tick1 != 0:
+        price += tick1 - (price % tick1)
+    elif price < 20000 and price % tick2 != 0:
+        price += tick2 - (price % tick2)
+    elif price % tick3 != 0:
+        price += tick3 - (price % tick3)
+
+    return price
+
+
 
 #Kodex Inverse 2X 매수가 설정
-if PI_cap < 5000:
-    PI_cap += tick1 - (PI_cap % tick1)
-elif PI_cap < 20000:
-    PI_cap += tick2 - (PI_cap % tick2)
-else:
-    PI_cap += tick3 - (PI_cap % tick3)
+PI_cap = Round(PI_cap)
 
 #Kodex Inverse 2X 매도가 설정
-if PI_loss < 5000:
-    PI_loss += tick1 - (PI_loss % tick1)
-elif PI_loss < 20000:
-    PI_loss += tick2 - (PI_loss % tick2)
-else:
-    PI_loss += tick3 - (PI_loss % tick3)
+PI_loss = Round(PI_loss)
 
 #Kodex Leverage 매수가 설정
-if PL_cap < 5000:
-    PL_cap += tick1 - (PL_cap % tick1)
-elif PL_cap < 20000:
-    PL_cap += tick2 - (PL_cap % tick2)
-else:
-    PL_cap += tick3 - (PL_cap % tick3)
+PL_cap = Round(PL_cap)
 
     
 #Kodex Leverage 매도가 설정
-if PL_loss < 5000:
-    PL_loss += tick1 - (PL_loss % tick1)
-elif PL_loss < 20000:
-    PL_loss += tick2 - (PL_loss % tick2)
-else:
-    PL_loss += tick3 - (PL_loss % tick3)
+PL_loss = Round(PL_loss)
 
 #매매 state 변수 설정
 if_buy_ins = 0
 if_buy_lv = 0
 
 
-while 540 < time < 900:
+while 539 <= time < 900:
     P_Inverse2X = broker.fetch_ohlcv(
         symbol="252670",
         timeframe='D',
@@ -166,7 +155,7 @@ while 540 < time < 900:
     print(('b'))
     
 
-while 900 < time:
+while 900 <= time:
     #Kodex Inverse 2X 매도
     PI_sell = broker.create_market_sell_order(
         symbol="252670",
@@ -191,7 +180,6 @@ while 900 < time:
     #         price=str(int(PL_loss)),
     #         quantity=str(int(balance // PL_loss))
     #     )
-
 
 
 
